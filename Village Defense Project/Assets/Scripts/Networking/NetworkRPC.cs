@@ -39,6 +39,8 @@ namespace Gem
         public const string MANAGER_ON_RECEIVE_AUTHENTICATION_STATUS = "OnReceiveAuthenticationStatus";
         public const string MANAGER_ON_RECEIVE_CONNECTIONS_STATUS = "OnReceiveConnectionStatus";
         public const string MANAGER_ON_PLAYER_KICKED = "OnPlayerKicked";
+
+        public const string MANAGER_ON_SEND_CHAT_MESSAGE = "OnSendChatMessage";
     }
 }
 

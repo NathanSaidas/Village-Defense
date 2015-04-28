@@ -36,6 +36,8 @@ namespace Gem
         [SerializeField]
         private Button m_SendButton = null;
 
+        private IChatInterceptor m_Interceptor = null;
+
         private EnterMessageCallback m_OnEnterMessage = null;
 
         
@@ -73,7 +75,14 @@ namespace Gem
         {
             if(m_InputField != null)
             {
-                AddMessage(aText);
+                if(interceptor != null)
+                {
+                    interceptor.OnSubmitMessage(aText, this);
+                }
+                else
+                {
+                    AddMessage(aText);
+                }
                 m_InputField.text = string.Empty;
             }
         }
@@ -92,6 +101,12 @@ namespace Gem
             {
                 onEnterMessage.Invoke(aMessage);
             }
+        }
+
+        public IChatInterceptor interceptor
+        {
+            get { return m_Interceptor; }
+            set { m_Interceptor = value; }
         }
 
         public EnterMessageCallback onEnterMessage

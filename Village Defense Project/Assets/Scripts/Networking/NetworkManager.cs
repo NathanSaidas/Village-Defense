@@ -191,6 +191,8 @@ namespace Gem
             [SerializeField]
             private List<Request> m_RequestList = new List<Request>();
 
+            private List<NetworkChat> m_Chats = new List<NetworkChat>();
+
             #region EVENTS
 
             private event NetworkEventCallback m_OnPlayerConnected;
@@ -1795,20 +1797,25 @@ namespace Gem
             }
             
 
+            
+
+            
+            #endregion
+
             public static void RegisterNetworkCallback(NetworkEvent aEvent, NetworkEventCallback aCallback)
             {
-                if(instance == null)
+                if (instance == null)
                 {
                     return;
                 }
 
-                if(aCallback == null)
+                if (aCallback == null)
                 {
                     DebugUtils.ArgumentNull("aCallback");
                     return;
                 }
 
-                switch(aEvent)
+                switch (aEvent)
                 {
                     case NetworkEvent.OnPlayerConnected:
                         instance.m_OnPlayerConnected += aCallback;
@@ -1860,10 +1867,91 @@ namespace Gem
                 }
             }
 
+
+            #region CHAT FUNCTIONS
+
+            public static void RegisterChat(NetworkChat aChat)
+            {
+                if (instance == null)
+                {
+                    return;
+                }
+                if (aChat == null)
+                {
+                    DebugUtils.ArgumentNull("aChat");
+                    return;
+                }
+
+                if (instance.m_Chats.Any<NetworkChat>(Element => Element.identifier == aChat.identifier))
+                {
+                    DebugUtils.LogError("Failed to register chat: " + aChat.identifier);
+                    return;
+                }
+
+                instance.m_Chats.Add(aChat);
+            }
+
+            public static void UnregisterChat(NetworkChat aChat)
+            {
+                if (instance == null)
+                {
+                    return;
+                }
+                if (aChat == null)
+                {
+                    DebugUtils.ArgumentNull("aChat");
+                    return;
+                }
+                instance.m_Chats.Remove(aChat);
+            }
+
+            public static NetworkChat GetChat(string aIdentifier)
+            {
+                return instance != null ? instance.m_Chats.FirstOrDefault<NetworkChat>(Element => Element.identifier == aIdentifier) : null;
+            }
+
+            public static void SendChatMessage(string aChatIdentifier, string aMessage)
+            {
+                if(instance == null)
+                {
+                    return;
+                }
+
+                if (Network.isClient)
+                {
+                    Send(NetworkRPC.MANAGER_ON_SEND_CHAT_MESSAGE, RPCMode.Server, aChatIdentifier, aMessage);
+                }
+                else if(Network.isServer)
+                {
+                    instance.OnSendChatMessage(aChatIdentifier, aMessage);
+                }
+            }
+
+            [RPC]
+            private void OnSendChatMessage(string aChatIdentifier, string aMessage)
+            {
+                if (Network.isServer)
+                {
+                    NetworkChat chat = GetChat(aChatIdentifier);
+                    if (chat != null)
+                    {
+                        chat.OnSubmitMessage(aMessage);
+                        Send(NetworkRPC.MANAGER_ON_SEND_CHAT_MESSAGE, RPCMode.OthersBuffered, aChatIdentifier, aMessage);
+                    }
+                }
+                else if (Network.isClient)
+                {
+                    NetworkChat chat = GetChat(aChatIdentifier);
+                    if (chat != null)
+                    {
+                        chat.OnSubmitMessage(aMessage);
+                    }
+                }
+            }
+
             #endregion
 
 
-            
         }
     }
 }

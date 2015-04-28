@@ -76,6 +76,7 @@
      <Compile Include="Assets\Scripts\Networking\Encryption.cs" />
      <Compile Include="Assets\Scripts\Networking\GameServer.cs" />
      <Compile Include="Assets\Scripts\Networking\InvalidPacketException.cs" />
+     <Compile Include="Assets\Scripts\Networking\NetworkChat.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkEvent.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkManager.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkRPC.cs" />
@@ -93,6 +94,7 @@
      <Compile Include="Assets\Scripts\Networking\RoutinePollServers.cs" />
      <Compile Include="Assets\Scripts\Strings.cs" />
      <Compile Include="Assets\Scripts\Tester.cs" />
+     <Compile Include="Assets\Scripts\UI\IChatInterceptor.cs" />
      <Compile Include="Assets\Scripts\UI\UIAbilityTooltip.cs" />
      <Compile Include="Assets\Scripts\UI\UIBase.cs" />
      <Compile Include="Assets\Scripts\UI\UICanvasEx.cs" />
