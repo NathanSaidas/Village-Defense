@@ -56,6 +56,8 @@ namespace Gem
 
         public const string NETWORK_EVENT_PROPERTY_CONNECTING_USERS = "connectingUsers";
         public const string NETWORK_EVENT_PROPERTY_DISCONNECTING_USERS = "disconnectingUsers";
+        public const string NETWORK_EVENT_PROPERTY_KICKED_PLAYER = "kickedPlayer";
+        public const string NETWORK_EVENT_PROPERTY_KICKED_REASON = "kickedReason";
 
         #endregion
 

@@ -39,7 +39,6 @@ namespace Gem
             /// <param name="aPlayer"></param>
             public override void OnPlayerConnected(NetworkPlayer aPlayer)
             {
-                DebugUtils.Log("Player Connected: " + aPlayer.externalIP + "\n" + aPlayer.guid);
                 m_NetworkPlayers.Add(aPlayer);
             }
 
@@ -49,13 +48,11 @@ namespace Gem
             /// <param name="aPlayer"></param>
             public override void OnPlayerDisconnected(NetworkPlayer aPlayer)
             {
-                DebugUtils.Log("Player Disconnected: " + aPlayer.externalIP + "\n" + aPlayer.guid);
                 UnregisterPlayer(aPlayer);
                 for(int i = 0; i < m_NetworkPlayers.Count; i++)
                 {
                     if(m_NetworkPlayers[i].guid == aPlayer.guid)
                     {
-                        Debug.Log("Successful remove");
                         m_NetworkPlayers.RemoveAt(i);
                     }
                 }
@@ -94,7 +91,6 @@ namespace Gem
                 {
                     if(m_NetworkPlayers[i] == aPlayer)
                     {
-                        DebugUtils.Log("Player Registered: " + aUser.username);
                         aUser.networkPlayer = m_NetworkPlayers[i];
                         m_NetworkPlayers.RemoveAt(i);
                         m_NetworkUsers.Add(aUser);
@@ -115,12 +111,10 @@ namespace Gem
             private bool UnregisterPlayer(NetworkPlayer aPlayer)
             {
                 NetworkUser user = GetUser(aPlayer);
-                Debug.Log("Unregistering user: " + user.username);
                 if(user != NetworkUser.BAD_USER)
                 {
                     return UnregisterPlayer(user.username);
                 }
-                Debug.Log("Bad User");
                 return false;
             }
 
@@ -141,18 +135,42 @@ namespace Gem
             /// <returns>Returns true if the player was successfully unregistered, false otherwise.</returns>
             public bool UnregisterPlayer(string aUsername)
             {
-                Debug.Log("Unregistering player: " + aUsername);
                 for(int i = 0; i < m_NetworkUsers.Count; i++)
                 {
                     if(m_NetworkUsers[i].username == aUsername)
                     {
-                        DebugUtils.Log("Player Unregistered: " + m_NetworkUsers[i].username);
                         m_NetworkUsers.RemoveAt(i);
                         return true;
                     }
                 }
                 DebugUtils.LogError("Failed to unregister player, the player " + aUsername + " does not exist", LogVerbosity.LevelThree);
                 return false;
+            }
+
+            /// <summary>
+            /// Kicks a player from the game server.
+            /// </summary>
+            /// <param name="aUsername">The username of the player to kick</param>
+            /// <returns></returns>
+            public bool KickPlayer(string aUsername)
+            {
+                NetworkUser user = GetUser(aUsername);
+                if(user == NetworkUser.BAD_USER)
+                {
+                    return false;
+                }
+
+                Debug.Log("Kicking player: " + aUsername);
+
+                for (int i = 0; i < m_NetworkPlayers.Count; i++ )
+                {
+                    if (m_NetworkPlayers[i].guid == user.guid)
+                    {
+                        m_NetworkPlayers.RemoveAt(i);
+                        break;
+                    }
+                }
+                return UnregisterPlayer(aUsername);
             }
 
             /// <summary>
@@ -186,12 +204,7 @@ namespace Gem
                     
                     if(user.guid == guid)
                     {
-                        Debug.Log("Found Match:\n" + guid + "\n" + user.guid + "\n" + user.username);
                         return user;
-                    }
-                    else
-                    {
-                        Debug.Log("Match Not Found:\n" + guid + "\n" + user.guid);
                     }
                 }
                 return NetworkUser.BAD_USER;

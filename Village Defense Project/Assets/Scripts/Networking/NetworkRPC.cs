@@ -33,13 +33,12 @@ namespace Gem
         //Constants prefixed with the name "MANAGER" are from NetworkManager.
         public const string MANAGER_ON_REQUEST_AUTHENTICATION = "OnRequestAuthentication";
         public const string MANAGER_ON_REQUEST_CONNECTION = "OnRequestConnection";
-        public const string MANAGER_ON_REQUEST_KICK = "OnRequestKick";
 
 
         public const string MANAGER_ON_RECEIVE_CONNECTION_LIST = "OnReceiveConnectionList";
         public const string MANAGER_ON_RECEIVE_AUTHENTICATION_STATUS = "OnReceiveAuthenticationStatus";
         public const string MANAGER_ON_RECEIVE_CONNECTIONS_STATUS = "OnReceiveConnectionStatus";
-        public const string MANAGER_ON_PLAYER_DISCONNECT = "OnPlayerDisconnect";
+        public const string MANAGER_ON_PLAYER_KICKED = "OnPlayerKicked";
     }
 }
 

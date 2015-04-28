@@ -13,7 +13,9 @@ namespace Gem
         {
             OnPlayerConnected,
             OnPlayerDisconnected,
-            OnRefreshConnections
+            OnRefreshConnections,
+            OnPlayerKicked,
+            OnWasKicked,
         }
     }
 }

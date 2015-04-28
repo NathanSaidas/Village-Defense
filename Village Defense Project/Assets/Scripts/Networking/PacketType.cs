@@ -17,6 +17,7 @@ namespace Gem
             ConnectionRequest,
             ConnectionStatus,
             ConnectionList,
+            ConnectionKicked,
         }
     }
 }

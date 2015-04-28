@@ -40,17 +40,20 @@ namespace Gem
 
             foreach (UIPlayerPanel player in m_Players)
             {
+                UIPlayerPanel panel = player;
+
                 if (player == null)
                 {
                     DebugUtils.LogError("Missing player in UILobby");
                     continue;
                 }
-                player.kickButton.onClick.AddListener(() => OnKickPlayer(player));
+                player.kickButton.onClick.AddListener(() => OnKickPlayer(panel));
             }
 
             NetworkManager.RegisterNetworkCallback(NetworkEvent.OnPlayerConnected, OnPlayerJoined);
             NetworkManager.RegisterNetworkCallback(NetworkEvent.OnPlayerDisconnected, OnPlayerLeave);
             NetworkManager.RegisterNetworkCallback(NetworkEvent.OnRefreshConnections, OnUpdateConnectedPlayers);
+            NetworkManager.RegisterNetworkCallback(NetworkEvent.OnWasKicked, OnWasKicked);
 
             BaseInitialization();
         }
@@ -61,6 +64,7 @@ namespace Gem
             NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnPlayerConnected, OnPlayerJoined);
             NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnPlayerDisconnected, OnPlayerLeave);
             NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnRefreshConnections, OnUpdateConnectedPlayers);
+            NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnWasKicked, OnWasKicked);
         }
 
         private void OnDestroy()
@@ -70,6 +74,7 @@ namespace Gem
                 NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnPlayerConnected, OnPlayerJoined);
                 NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnPlayerDisconnected, OnPlayerLeave);
                 NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnRefreshConnections, OnUpdateConnectedPlayers);
+                NetworkManager.UnregisterNetworkCallback(NetworkEvent.OnWasKicked, OnWasKicked);
             }
         }
 
@@ -81,6 +86,9 @@ namespace Gem
                 m_StartButton.gameObject.SetActive(aIsHost);
             }
 
+            NetworkUser currentUser = NetworkManager.GetCurrentUser();
+
+            //Reset all UI player panels.
             int index = 1;
             foreach(UIPlayerPanel player in m_Players)
             {
@@ -100,6 +108,16 @@ namespace Gem
             {
                 OnUpdateConnectedPlayers(null);
             } 
+
+            //Disable the kick button from the host.
+            foreach(UIPlayerPanel player in m_Players)
+            {
+                if(player.currentPlayer == currentUser)
+                {
+                    player.kickButton.gameObject.SetActive(false);
+                    break;
+                }
+            }
         }
 
 
@@ -122,12 +140,28 @@ namespace Gem
 
         private void OnKickPlayer(UIPlayerPanel aPlayer)
         {
-            //can only occur on host side.
+            if(!NetworkManager.IsServerHost())
+            {
+                return;
+            }
+            NetworkUser currentUser = NetworkManager.GetCurrentUser();
+            if(aPlayer.currentPlayer == currentUser)
+            {
+                return;
+            }
+            DebugUtils.Log("Trying to kick Player" + aPlayer.currentPlayer.username + " at " + aPlayer.name);
+            NetworkManager.RequestKick(null, aPlayer.currentPlayer.username, "Reason: No Reason");
+
         }
 
 
         private void OnPlayerJoined(params EventProperty[] aProperties)
         {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
             EventProperty connectingUserProperty = aProperties.FirstOrDefault<EventProperty>(Element => Element.name == Constants.NETWORK_EVENT_PROPERTY_CONNECTING_USERS);
             if (connectingUserProperty != null)
             {
@@ -149,6 +183,11 @@ namespace Gem
         }
         private void OnPlayerLeave(params EventProperty[] aProperties)
         {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
             EventProperty disconnectingUserProperty = aProperties.FirstOrDefault<EventProperty>(Element => Element.name == Constants.NETWORK_EVENT_PROPERTY_DISCONNECTING_USERS);
             if (disconnectingUserProperty != null)
             {
@@ -172,6 +211,10 @@ namespace Gem
 
         private void OnUpdateConnectedPlayers(params EventProperty[] aProperties)
         {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
             //Updating player connections.
             NetworkUser[] newUsers = NetworkManager.GetConnectedUsers();
             
@@ -188,6 +231,22 @@ namespace Gem
                 }
             }
 
+        }
+
+        private void OnWasKicked(params EventProperty[] aProperties)
+        {
+            if (!gameObject.activeSelf)
+            {
+                return;
+            }
+
+            EventProperty reasonProperty = aProperties.FirstOrDefault<EventProperty>(Element => Element.name == Constants.NETWORK_EVENT_PROPERTY_KICKED_REASON);
+            if(reasonProperty != null)
+            {
+                DebugUtils.Log("I was kicked for " + reasonProperty.data);
+            }
+
+            Previous();
         }
 
         

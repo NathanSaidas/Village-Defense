@@ -453,6 +453,71 @@ namespace Gem
                 }
 
             }
+
+            //Connection Kicked
+
+            public static Packet CreateConnectionKickedPacket(string aPlayerKicked, string aReason)
+            {
+                if(string.IsNullOrEmpty(aPlayerKicked))
+                {
+                    DebugUtils.InvalidArgument("aPlayerKicked");
+                    return null;
+                }
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream();
+
+                CreateHeader(PacketType.ConnectionKicked, formatter, stream);
+
+                formatter.Serialize(stream, typeof(string).Name);
+                formatter.Serialize(stream, aPlayerKicked);
+
+                formatter.Serialize(stream, typeof(string).Name);
+                formatter.Serialize(stream, aReason);
+
+                return new Packet(stream.ToArray());
+            }
+
+            public static bool GetConnectionKickedPacketData(Packet aPacket, out string aPlayerKicked, out string aReason)
+            {
+                aPlayerKicked = string.Empty;
+                aReason = string.Empty;
+                if(aPacket == null || aPacket.bytes == null || aPacket.bytes.Length == 0)
+                {
+                    DebugUtils.LogError(ErrorCode.BAD_PACKET);
+                    return false;
+                }
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream(aPacket.bytes);
+                string typename = string.Empty;
+
+                try
+                {
+                    if(!CheckHeader(PacketType.ConnectionKicked,formatter,stream))
+                    {
+                        return false;
+                    }
+
+                    typename = (string)formatter.Deserialize(stream);
+                    aPlayerKicked = (string)formatter.Deserialize(stream);
+
+                    typename = (string)formatter.Deserialize(stream);
+                    aReason = (string)formatter.Deserialize(stream);
+
+                    return true;
+                }
+                catch (Exception aException)
+                {
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        DebugUtils.LogError("Error deserializing packet type, " + typename);
+                    }
+                    DebugUtils.LogException(aException);
+                    return false;
+                }
+
+            }
         }
 
     }

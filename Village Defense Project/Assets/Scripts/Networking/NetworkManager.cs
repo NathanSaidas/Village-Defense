@@ -196,7 +196,8 @@ namespace Gem
             private event NetworkEventCallback m_OnPlayerConnected;
             private event NetworkEventCallback m_OnPlayerDisconnected;
             private event NetworkEventCallback m_OnRefreshConnections;
-
+            private event NetworkEventCallback m_OnPlayerKicked;
+            private event NetworkEventCallback m_OnWasKicked;
             #endregion
 
 
@@ -885,6 +886,90 @@ namespace Gem
                 return RequestConnection(aCallback, aServer, Constants.DEFAULT_TIME_OUT);
             }
 
+            public static Request RequestKick(RequestCallback aCallback, string aUsername, string aReason, float aTimeout)
+            {
+                if(instance == null)
+                {
+                    return null;
+                }
+                if(!IsServerHost())
+                {
+                    DebugUtils.LogError("Only server hosts can kick players");
+                    return null;
+                }
+
+                if(aUsername == GetCurrentUser().username)
+                {
+                    DebugUtils.LogError("Kicking one's self is not allowed, use DestroyGameServer instead");
+                    return null;
+                }
+
+                
+
+                NetworkUser user = instance.m_GameServer.GetUser(aUsername);
+                if(user == NetworkUser.BAD_USER)
+                {
+                    DebugUtils.LogError("Failed to kicked user, user does not exist");
+                    return null;
+                }
+
+                Request request = new Request(aCallback, GetCurrentUser(), RequestType.Kick, aTimeout);
+                bool success = instance.m_GameServer.KickPlayer(aUsername);
+                if(success)
+                {
+                    Debug.Log("Kick Player Successful: " + user.username);
+                    Packet packet = PacketFactory.CreateConnectionKickedPacket(user.username, aReason == null ? string.Empty : aReason);
+                    if(packet != null)
+                    {
+                        Send(NetworkRPC.MANAGER_ON_PLAYER_KICKED, RPCMode.Others, packet.bytes);
+                    }
+                    if(instance.m_OnPlayerKicked != null)
+                    {
+                        instance.m_OnPlayerKicked.Invoke(
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_KICKED_PLAYER, aUsername),
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_KICKED_REASON, aReason));
+                    }
+                    
+                }
+                else
+                {
+                    DebugUtils.Log("Failed to kick user");
+                }
+
+                AddRequest(request);
+                RequestData requestData = new RequestData();
+                requestData.request = request;
+                requestData.data = success;
+                CompleteRequest(requestData);
+
+
+                if(success)
+                {
+                    instance.StartCoroutine(instance.KickPlayer(user.networkPlayer));
+                }
+
+
+                UpdateConnectionList();
+
+
+                return request;
+            }
+
+            public static Request RequestKick(RequestCallback aCallback, string aUsername, float aTimeout)
+            {
+                return RequestKick(aCallback, aUsername, string.Empty, aTimeout);
+            }
+
+            public static Request RequestKick(RequestCallback aCallback, string aUsername, string aReason)
+            {
+                return RequestKick(aCallback, aUsername, aReason, Constants.DEFAULT_TIME_OUT);
+            }
+
+            public static Request RequestKick(RequestCallback aCallback, string aUsername)
+            {
+                return RequestKick(aCallback, aUsername, string.Empty, Constants.DEFAULT_TIME_OUT);
+            }
+
             #endregion
 
             #region UTILITY
@@ -1231,6 +1316,12 @@ namespace Gem
 
             }
 
+            private IEnumerator<YieldInstruction> KickPlayer(NetworkPlayer aPlayer)
+            {
+                yield return new WaitForEndOfFrame();
+                Network.CloseConnection(aPlayer,false);
+            }
+
             /// <summary>
             /// Starts a poll routine to get the authenticaiton servers.
             /// </summary>
@@ -1514,11 +1605,6 @@ namespace Gem
                 }
             }
 
-            [RPC]
-            private void OnRequestKick(byte[] aBytes, NetworkMessageInfo aInfo)
-            {
-                //TODO(Nathan): Check to see if the sender is a higher status than the person being kicked.
-            }
 
             #endregion
 
@@ -1650,6 +1736,12 @@ namespace Gem
             [RPC]
             private void OnReceiveConnectionList(byte[] aBytes)
             {
+                if (!Network.isClient)
+                {
+                    ClientRPCError("OnReceiveConnectionList", NetworkRPC.MANAGER_ON_RECEIVE_CONNECTION_LIST);
+                    return;
+                }
+
                 NetworkUser[] users = null;
                 if(PacketFactory.GetConnectionListPacketData(new Packet(aBytes), out users))
                 {
@@ -1662,19 +1754,46 @@ namespace Gem
 
             }
 
-
             [RPC]
-            private void OnPlayerDisconnect(byte[] aBytes, NetworkPlayer aPlayer)
+            private void OnPlayerKicked(byte[] aBytes)
             {
-                BinaryFormatter formatter = new BinaryFormatter();
-                MemoryStream memoryStream = new MemoryStream(aBytes);
-                NetworkUser user = new NetworkUser();
-                user.Deserialize(memoryStream, formatter);
-                DisconnectReason reason = (DisconnectReason)formatter.Deserialize(memoryStream);
+                if (!Network.isClient)
+                {
+                    ClientRPCError("OnPlayerKicked", NetworkRPC.MANAGER_ON_PLAYER_KICKED);
+                    return;
+                }
 
-                DebugUtils.Log("User disconnected: " + user + "\nReason: " + reason);
+                string username = string.Empty;
+                string reason = string.Empty;
+                if (PacketFactory.GetConnectionKickedPacketData(new Packet(aBytes), out username, out reason))
+                {
+                    DebugUtils.Log("Player " + username + ", was kicked for " + reason);
+                    if(username == GetCurrentUser().username)
+                    {
+                        
+                        if (m_OnWasKicked != null)
+                        {
+                            m_OnWasKicked.Invoke(new EventProperty(Constants.NETWORK_EVENT_PROPERTY_KICKED_REASON, reason));
+                        }
+
+                        m_ConnectedServer = NetworkServer.BAD_SERVER;
+                        m_TargetConnection = NetworkServer.BAD_SERVER;
+                        m_CurrentState = NetworkState.LoggedIn;
+
+
+                    }
+                    else
+                    {
+                        if(m_OnPlayerKicked != null)
+                        {
+                            m_OnPlayerKicked.Invoke(
+                                new EventProperty(Constants.NETWORK_EVENT_PROPERTY_KICKED_PLAYER, username),
+                                new EventProperty(Constants.NETWORK_EVENT_PROPERTY_KICKED_REASON, reason));
+                        }
+                    }
+                }
             }
-
+            
 
             public static void RegisterNetworkCallback(NetworkEvent aEvent, NetworkEventCallback aCallback)
             {
@@ -1699,6 +1818,12 @@ namespace Gem
                         break;
                     case NetworkEvent.OnRefreshConnections:
                         instance.m_OnRefreshConnections += aCallback;
+                        break;
+                    case NetworkEvent.OnPlayerKicked:
+                        instance.m_OnPlayerKicked += aCallback;
+                        break;
+                    case NetworkEvent.OnWasKicked:
+                        instance.m_OnWasKicked += aCallback;
                         break;
                 }
             }
@@ -1726,10 +1851,19 @@ namespace Gem
                     case NetworkEvent.OnRefreshConnections:
                         instance.m_OnRefreshConnections -= aCallback;
                         break;
+                    case NetworkEvent.OnPlayerKicked:
+                        instance.m_OnPlayerKicked -= aCallback;
+                        break;
+                    case NetworkEvent.OnWasKicked:
+                        instance.m_OnWasKicked -= aCallback;
+                        break;
                 }
             }
 
             #endregion
+
+
+            
         }
     }
 }
