@@ -21,6 +21,8 @@
 using UnityEngine;
 using System.Text;
 
+using Gem.Networking;
+
 #region CHANGE LOG
 // -- April		11, 2015 - Nathan Hanlan - Adding in game loader class.
 #endregion

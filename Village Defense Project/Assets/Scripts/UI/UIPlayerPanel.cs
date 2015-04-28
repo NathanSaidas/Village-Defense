@@ -4,6 +4,7 @@
 
 using UnityEngine;
 using UnityEngine.UI;
+using Gem.Networking;
 
 namespace Gem
 {
@@ -12,8 +13,11 @@ namespace Gem
     /// </summary>
     public class UIPlayerPanel : MonoBehaviour
     {
+        [SerializeField]
         NetworkUser m_CurrentPlayer = NetworkUser.BAD_USER;
         PlayerIndex m_PlayerIndex = 0;
+        [SerializeField]
+        [DebugLabel]
         bool m_IsOpen = true;
         [SerializeField]
         private Text m_PlayerName = null;
@@ -22,6 +26,7 @@ namespace Gem
 
         public void SetPlayer(NetworkUser aPlayer)
         {
+            Debug.Log("Setting User: " + aPlayer.username);
             m_IsOpen = false;
             m_CurrentPlayer = aPlayer;
             if(m_PlayerName != null)
@@ -39,6 +44,7 @@ namespace Gem
                 m_PlayerName.text = "<Open>";
             }
         }
+
 
         public NetworkUser currentPlayer
         {
@@ -58,7 +64,7 @@ namespace Gem
         public Text playerName
         {
             get { return m_PlayerName; }
-            set { m_PlayerName = value; }
+            set { Debug.Log("Changing Player Name"); m_PlayerName = value; }
         }
 
         public Button kickButton

@@ -5,6 +5,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 
+using Gem.Networking;
+
 namespace Gem
 {
     /// <summary>
@@ -40,7 +42,7 @@ namespace Gem
         {
             if(m_Connections != null)
             {
-                m_Connections.text = "Connections: " + aConnectedPlayers.ToString() + "/" + NetworkManager.MAX_USERS_PER_GAME.ToString();
+                m_Connections.text = "Connections: " + aConnectedPlayers.ToString() + "/" + Constants.SERVER_MAX_USERS.ToString();
             }
         }
 

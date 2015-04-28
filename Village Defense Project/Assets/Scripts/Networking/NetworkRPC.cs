@@ -32,23 +32,13 @@ namespace Gem
     {
         //Constants prefixed with the name "MANAGER" are from NetworkManager.
         public const string MANAGER_ON_REQUEST_AUTHENTICATION = "OnRequestAuthentication";
-        public const string MANAGER_ON_REQUEST_CONNECTION_LIST = "OnRequestConnectionList";
         public const string MANAGER_ON_REQUEST_CONNECTION = "OnRequestConnection";
         public const string MANAGER_ON_REQUEST_KICK = "OnRequestKick";
-        public const string MANAGER_ON_REQUEST_DISCONNECT = "OnRequestDisconnect";
-        public const string MANAGER_ON_REQUEST_SELECT_HERO = "OnRequestSelectHero";
-        public const string MANAGER_ON_REQUEST_START_GAME = "OnRequestStartGame";
-        public const string MANAGER_ON_REQUEST_SPAWN = "OnRequestSpawn";
-        public const string MANAGER_ON_REQUEST_OWNERSHIP = "OnRequestOwnership";
-        public const string MANAGER_ON_REQUEST_DESTROY = "OnRequestDestroy";
-        public const string MANAGER_ON_REQUEST_ISSUE_ABILITY = "OnRequestIssueAbility";
 
 
+        public const string MANAGER_ON_RECEIVE_CONNECTION_LIST = "OnReceiveConnectionList";
         public const string MANAGER_ON_RECEIVE_AUTHENTICATION_STATUS = "OnReceiveAuthenticationStatus";
         public const string MANAGER_ON_RECEIVE_CONNECTIONS_STATUS = "OnReceiveConnectionStatus";
-        public const string MANAGER_ON_RECEIVE_DISCONNECT_STATUS = "OnReceiveDisconnectStatus";
-        public const string MANAGER_ON_ESTABLISH_NEW_HOST = "OnEstablishNewHost";
-        public const string MANAGER_ON_RECEIVE_CONNECTION_LIST = "OnReceiveConnectionList";
         public const string MANAGER_ON_PLAYER_DISCONNECT = "OnPlayerDisconnect";
     }
 }

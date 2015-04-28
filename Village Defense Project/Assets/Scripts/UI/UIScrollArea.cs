@@ -147,7 +147,7 @@ namespace Gem
 
             if (m_ScrollBar != null)
             {
-                m_ScrollBar.anchoredPosition = m_ScrollBarOnLeft ? new Vector2(-m_Area.width * 0.5f, 0.0f) : new Vector2(m_Area.width * 0.5f, 0.0f);
+                m_ScrollBar.anchoredPosition = Vector2.zero; // m_ScrollBarOnLeft ? new Vector2(-m_Area.width * 0.5f, 0.0f) : new Vector2(m_Area.width * 0.5f, 0.0f);
                 m_ScrollBar.sizeDelta = new Vector2(m_ScrollBarWidth, m_Area.height);
             }
             else

@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
+using Gem.Networking;
+
 namespace Gem
 {
     public class UIMatchFinder : UIMenu
@@ -106,6 +108,10 @@ namespace Gem
             {
                 m_CreateGameWindow.createGameCallback = OnCreateGame;
             }
+
+            
+
+            BaseInitialization();
         }
 
 
@@ -223,8 +229,7 @@ namespace Gem
             }
 
             //Get the status
-            object[] data = (object[])aData.data;
-            int status = (int)data[1];
+            int status = (int)aData.data;
 
             if (status == NetworkStatus.GOOD)
             {
@@ -267,6 +272,10 @@ namespace Gem
             m_MadeRequest = false;
             if(aData.data == null)
             {
+                if(m_MatchListView != null)
+                {
+                    m_MatchListView.Clear();
+                }
                 return;
             }
             m_BufferServers = (NetworkServer[])aData.data;
@@ -290,10 +299,12 @@ namespace Gem
                     DebugUtils.LogWarning("Connection Request Timed Out");
                     m_ConnectionRequest = null;
                     m_JoiningServer = false;
+                    
                 }
                 else if(m_ConnectionRequest.status == RequestStatus.Invalid)
                 {
                     m_ConnectionRequest = null;
+                    m_JoiningServer = false;
                 }
                 
             }
@@ -304,10 +315,12 @@ namespace Gem
                 {
                     DebugUtils.LogWarning("GetServers Request Timed Out");
                     m_GetServersRequest = null;
+                    m_MadeRequest = false;
                 }
                 else if (m_GetServersRequest.status == RequestStatus.Invalid)
                 {
                     m_GetServersRequest = null;
+                    m_MadeRequest = false;
                 }
             }
         }

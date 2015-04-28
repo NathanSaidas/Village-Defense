@@ -2,108 +2,99 @@
 using System.Text;
 using System.Collections;
 
+using Gem.Tools;
+
 namespace Gem
 {
     public class Tester : MonoBehaviour
     {
+        ConfigFile configFile = null;
 
-        Request m_CurrentRequest = null;
-        
-        public string m_Username = string.Empty;
-        public string m_Password = string.Empty;
         // Use this for initialization
         void Start()
         {
-            StartTest();
+            
         }
-        
-        // Update is called once per frame
+
         void Update()
         {
-        
-	    }
-        
-        void StartTest()
-        {
-            Debug.Log("Querying Authentciation Servers");
-            m_CurrentRequest = NetworkManager.RequestAuthenticationServers(OnReceiveAuthenticationServers);
-        }
-        
-        void OnReceiveAuthenticationServers(RequestData aData)
-        {
-            Debug.Log("Receiving Authentciation Servers");
-        
-            CheckData(aData);
-        
-            NetworkServer[] servers = (NetworkServer[])aData.data;
-            
-            if(servers != null && servers.Length > 0)
+            if(Input.GetKeyDown(KeyCode.A))
             {
-                //Connect to the first authentication server.
-                Debug.Log("Request Authentciation Server Connection");
-                m_CurrentRequest = NetworkManager.RequestConnection(OnConnectToAuthenticationServer, servers[0]);
+                Debug.Log("Saving");
+                SaveFile();
             }
-            else
+            else if(Input.GetKeyDown(KeyCode.D))
             {
-                Debug.Log("No servers available");
+                Debug.Log("Loading");
+                LoadFile();
             }
         }
-        
-        void OnConnectToAuthenticationServer(RequestData aData)
+
+
+        void SaveFile()
         {
-            CheckData(aData);
-        
-            object[] data = (object[])aData.data;
-            if(data != null && data.Length == 2)
+            configFile = new ConfigFile();
+
             {
-                int status = (int)data[1];
-                if(status == NetworkStatus.GOOD)
-                {
-                    Debug.Log("Connected to Authentication Server, Requesting Authentication");
-                    m_CurrentRequest = NetworkManager.RequestAuthentication(OnAuthenticateAccount, m_Username, m_Password);
-                }
-                else if(status == NetworkStatus.FULL)
-                {
-                    Debug.Log("Failed to connect to Authentication Server: Reason FULL");
-                    m_CurrentRequest = null;
-                }
-                else if(status == NetworkStatus.ERROR)
-                {
-                    Debug.Log("Failed to connect to Authentication Server: Reason ERROR");
-                    m_CurrentRequest = null;
-                }
+                ConfigFileSection chelsea = new ConfigFileSection();
+                chelsea.sectionName = "Chelsea";
+
+                ConfigVariable<string> nickName = new ConfigVariable<string>("nickName", "Cutiemoo");
+                ConfigVariable<int> cutenessFactor = new ConfigVariable<int>("cutenessFactor", 9001);
+                ConfigVariable<Vector3> position = new ConfigVariable<Vector3>("position", new Vector3(34.0f, 1.0f, 700.0f));
+
+                chelsea.AddVariable(nickName);
+                chelsea.AddVariable(cutenessFactor);
+                chelsea.AddVariable(position);
+
+                //chelsea.LogSection();
+                configFile.AddSection(chelsea);
             }
+
+
+            {
+                ConfigFileSection nathan = new ConfigFileSection();
+                nathan.sectionName = "Nathan";
+
+                ConfigVariable<string> nickName = new ConfigVariable<string>("nickName", "Chips");
+                ConfigVariable<int> handsomFactor = new ConfigVariable<int>("handsomFactor", -340);
+                ConfigVariable<Vector3> scale = new ConfigVariable<Vector3>("scale", new Vector3(1.5f, 0.35f, 1.0f));
+
+                nathan.AddVariable(nickName);
+                nathan.AddVariable(handsomFactor);
+                nathan.AddVariable(scale);
+
+                //nathan.LogSection();
+                configFile.AddSection(nathan);
+            }
+
+
+            configFile.Save(Application.dataPath + "\\Test.cfg");
+            configFile = null;
+
         }
-        
-        void OnAuthenticateAccount(RequestData aData)
+
+        void LoadFile()
         {
-            Debug.Log("Authentication Complete");
-            CheckData(aData);
-        
-            int status = (int)aData.data;
-            if (status == NetworkStatus.GOOD)
-            {
-                Debug.Log("Authentication Successful");
-                m_CurrentRequest = null;
-            }
-            else if (status == NetworkStatus.INVALID_USERNAME)
-            {
-                Debug.Log("Authentication Failed: Invalid Username");
-                m_CurrentRequest = null;
-            }
-            else if (status == NetworkStatus.INVALID_PASSWORD)
-            {
-                Debug.Log("Authentication Failed: Invalid Password");
-                m_CurrentRequest = null;
-            }
-        }
-        
-        void CheckData(RequestData aData)
-        {
-            if (aData.request != m_CurrentRequest)
-            {
-                Debug.LogError("Bad request match");
-            }
+            configFile = new ConfigFile();
+            configFile.Load(Application.dataPath + "\\Test.cfg");
+
+            //{
+            //    ConfigFileSection chelsea = configFile.GetSection("Chelsea");
+            //    if(chelsea != null)
+            //    {
+            //        chelsea.LogSection();
+            //    }
+            //}
+            //
+            //{
+            //    ConfigFileSection nathan = configFile.GetSection("Nathan");
+            //    if(nathan != null)
+            //    {
+            //        nathan.LogSection();
+            //    }
+            //}
+            configFile = null;
         }
     }
 }

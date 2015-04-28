@@ -463,6 +463,15 @@ namespace Gem
         }
         #endregion
 
+        public static void InvalidArgument(string aArgumentName, string aMessage)
+        {
+#if GEM_EXCEPTIONS
+
+#else
+            LogError("Invalid Argument: " + aArgumentName + ", " + aMessage);
+#endif
+        }
+
         /// <summary>
         /// Clears the Unity debug console.
         /// </summary>

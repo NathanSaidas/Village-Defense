@@ -50,6 +50,9 @@ namespace Gem
         "Network: Invalid Network State",
         "Network: Invalid Request",
         "Network: IsServerHost is true but the peer is not a server host",
+        "Network: Bad Packet",
+        "Network: Invalid Packet Version",
+        "Network: Invalid Packet Type",
 #endregion
 
 #region GAME_CACHE
@@ -106,6 +109,9 @@ namespace Gem
         INVALID_NETWORK_STATE,
         INVALID_REQUEST,
         INVALID_SERVER_HOST_STATE,
+        BAD_PACKET,
+        INVALID_PACKET_VERSION,
+        INVALID_PACKET_TYPE,
         #endregion
 
         #region GAME_CACHE

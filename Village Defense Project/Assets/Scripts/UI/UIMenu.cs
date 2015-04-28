@@ -6,10 +6,19 @@ namespace Gem
     public class UIMenu : UIBase
     {
         [SerializeField]
+        private bool m_IsStartMenu = false;
+        [SerializeField]
         private UIMenu m_PreviousMenu = null;
         [SerializeField]
         private UIMenu m_NextMenu = null;
 
+        protected void BaseInitialization()
+        {
+            if(!m_IsStartMenu)
+            {
+                gameObject.SetActive(false);
+            }
+        }
 
         protected void SetupButton(Button aButton, string aName)
         {

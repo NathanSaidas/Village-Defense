@@ -42,6 +42,25 @@ namespace Gem
         public const string GAME_OBJECT_EVENT_SYSTEM = "UI_EventSystem";
         #endregion
 
+        #region NETWORK_CONSTANTS
+        public const int DEFAULT_AUTHENTICATION_PORT = 25070;
+        public const int DEFAULT_GAME_PORT = 25071;
+        public const float DEFAULT_TIME_OUT = -1.0f;
+
+        public const string SERVER_TYPE_AUTHENTICATION = "GEM-VD-Authentication";
+        public const string SERVER_TYPE_GAME = "GEM-VD-Game";
+        public const int SERVER_MAX_USERS = 6;
+
+
+        #region NETWORK EVENT PROPERTIES
+
+        public const string NETWORK_EVENT_PROPERTY_CONNECTING_USERS = "connectingUsers";
+        public const string NETWORK_EVENT_PROPERTY_DISCONNECTING_USERS = "disconnectingUsers";
+
+        #endregion
+
+        #endregion
+
     }
 
 

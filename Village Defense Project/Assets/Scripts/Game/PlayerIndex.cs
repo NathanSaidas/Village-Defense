@@ -33,6 +33,11 @@ namespace Gem
         {
             return new PlayerIndex(aValue);
         }
+
+        public override string ToString()
+        {
+            return m_Value.ToString();
+        }
     }
 }
 

@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 
+using Gem.Networking;
+
 namespace Gem
 {
     /// <summary>
@@ -48,6 +50,7 @@ namespace Gem
             {
                 m_LoginWindow.loginCallback = OnLogin;
             }
+            BaseInitialization();
         }
 
         
@@ -89,11 +92,61 @@ namespace Gem
             {
                 return;
             }
+
+            if(Authenticator.current != null)
+            {
+                DebugUtils.LogError("Cannot login, already processing a login request");
+                return;
+            }
+
             Debug.Log("Logging in with username: " + aUsername);
             m_Username = aUsername;
             m_Password = aPassword;
 
-            m_LoginRequest = NetworkManager.RequestAuthenticationServers(OnReceiveAuthenticationServers, 35.0f);
+            //m_LoginRequest = NetworkManager.RequestAuthenticationServers(OnReceiveAuthenticationServers, 35.0f);
+
+            Authenticator authenticator = Authenticator.current;
+            if(authenticator == null)
+            {
+                authenticator = new Authenticator();
+                authenticator.Login(m_Username, m_Password, OnLoginFinish, 35.0f);
+            }
+        
+        }
+
+        void OnLoginFinish(int aStatus)
+        {
+            Debug.Log("Finished Login at: " + Authenticator.current.currentState);
+            switch(aStatus)
+            {
+                case NetworkStatus.GOOD:
+                    {
+                        Next();
+                        if (m_LoginWindow != null)
+                        {
+                            m_LoginWindow.Hide();
+                        }
+                    }
+                    break;
+                case NetworkStatus.INVALID_USERNAME:
+                    {
+                        UIErrorWindow.Create("Authentication Error", "Invalid username");
+                        DebugUtils.LogError("Invalid username");
+                    }
+                    break;
+                case NetworkStatus.INVALID_PASSWORD:
+                    {
+                        UIErrorWindow.Create("Authentication Error", "Invalid password");
+                        DebugUtils.LogError("Invalid password");
+                    }
+                    break;
+                default:
+                    {
+                        DebugUtils.LogError("Invalid network status returned");
+                        DebugUtils.LogError("Invalid status " + aStatus);
+                    }
+                    break;
+            }
         }
 
         void OnReceiveAuthenticationServers(RequestData aData)
