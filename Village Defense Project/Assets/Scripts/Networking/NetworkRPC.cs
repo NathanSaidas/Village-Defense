@@ -41,6 +41,14 @@ namespace Gem
         public const string MANAGER_ON_PLAYER_KICKED = "OnPlayerKicked";
 
         public const string MANAGER_ON_SEND_CHAT_MESSAGE = "OnSendChatMessage";
+
+        public const string MANAGER_ON_CREATE_OBJECT = "OnCreateObject";
+        public const string MANAGER_ON_OBJECT_DESTROYED = "OnObjectDestroyed";
+        public const string MANAGER_ON_DESTROY_OBJECT = "OnDestroyObject";
+        public const string MANAGER_ON_REPORT_INVALID_OBJECT = "OnReportInvalidObject";
+        public const string MANAGER_ON_DESTROY_INVALID_OBJECT = "OnDestroyInvalidObject";
+
+        public const string NETWORKID_ON_INITIALIZE_NETWORK_ID = "OnInitializeNetworkID";
     }
 }
 

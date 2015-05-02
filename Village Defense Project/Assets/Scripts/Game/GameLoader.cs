@@ -54,7 +54,7 @@ namespace Gem
             }
             if(!UIManager.Exists())
             {
-                if(string.IsNullOrEmpty(loadErrorString.ToString()))
+                if(!string.IsNullOrEmpty(loadErrorString.ToString()))
                 {
                     loadErrorString.Append("\n");
                 }
@@ -62,7 +62,7 @@ namespace Gem
             }
             if(!NetworkManager.Exists())
             {
-                if (string.IsNullOrEmpty(loadErrorString.ToString()))
+                if (!string.IsNullOrEmpty(loadErrorString.ToString()))
                 {
                     loadErrorString.Append("\n");
                 }
@@ -70,11 +70,19 @@ namespace Gem
             }
             if(!Game.Exists())
             {
-                if(string.IsNullOrEmpty(loadErrorString.ToString()))
+                if(!string.IsNullOrEmpty(loadErrorString.ToString()))
                 {
                     loadErrorString.Append("\n");
                 }
                 loadErrorString.Append("Failed to load Game");
+            }
+            if(!PrefabDatabase.Exists())
+            {
+                if(!string.IsNullOrEmpty(loadErrorString.ToString()))
+                {
+                    loadErrorString.Append("\n");
+                }
+                loadErrorString.Append("Failed to load prefab database");
             }
 
             s_LoadError = loadErrorString.ToString();

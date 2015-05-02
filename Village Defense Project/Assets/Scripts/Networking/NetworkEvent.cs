@@ -16,6 +16,9 @@ namespace Gem
             OnRefreshConnections,
             OnPlayerKicked,
             OnWasKicked,
+
+            OnObjectCreated,
+            OnObjectDestroyed,
         }
     }
 }

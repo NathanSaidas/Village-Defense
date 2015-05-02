@@ -19,7 +19,7 @@
 	<DebugType>full</DebugType>
 	<Optimize>false</Optimize>
 	<OutputPath>Temp\bin\Debug\</OutputPath>
-	<DefineConstants>DEBUG;TRACE;UNITY_5_0_1;UNITY_5_0;UNITY_5;ENABLE_LICENSE_RENAME;ENABLE_NEW_BUGREPORTER;ENABLE_2D_PHYSICS;ENABLE_4_6_FEATURES;ENABLE_AUDIO;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_DUCK_TYPING;ENABLE_FRAME_DEBUGGER;ENABLE_GENERICS;ENABLE_HOME_SCREEN;ENABLE_IMAGEEFFECTS;ENABLE_LIGHT_PROBES_LEGACY;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_NEW_HIERARCHY;ENABLE_PHYSICS;ENABLE_PHYSICS_PHYSX3;ENABLE_PLUGIN_INSPECTOR;ENABLE_SHADOWS;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_UNITYEVENTS;ENABLE_WEBCAM;ENABLE_WWW;ENABLE_AUDIOMIXER_SUSPEND;ENABLE_NONPRO;INCLUDE_DYNAMIC_GI;INCLUDE_GI;INCLUDE_IL2CPP;PLATFORM_SUPPORTS_MONO;RENDER_SOFTWARE_CURSOR;UNITY_STANDALONE_WIN;UNITY_STANDALONE;ENABLE_SUBSTANCE;ENABLE_TEXTUREID_MAP;ENABLE_RUNTIME_GI;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_MONO;DEVELOPMENT_BUILD;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN</DefineConstants>
+	<DefineConstants>DEBUG;TRACE;UNITY_5_0_1;UNITY_5_0;UNITY_5;ENABLE_LICENSE_RENAME;ENABLE_NEW_BUGREPORTER;ENABLE_2D_PHYSICS;ENABLE_4_6_FEATURES;ENABLE_AUDIO;ENABLE_CACHING;ENABLE_CLOTH;ENABLE_DUCK_TYPING;ENABLE_FRAME_DEBUGGER;ENABLE_GENERICS;ENABLE_HOME_SCREEN;ENABLE_IMAGEEFFECTS;ENABLE_LIGHT_PROBES_LEGACY;ENABLE_MICROPHONE;ENABLE_MULTIPLE_DISPLAYS;ENABLE_NEW_HIERARCHY;ENABLE_PHYSICS;ENABLE_PHYSICS_PHYSX3;ENABLE_PLUGIN_INSPECTOR;ENABLE_SHADOWS;ENABLE_SINGLE_INSTANCE_BUILD_SETTING;ENABLE_SPRITES;ENABLE_TERRAIN;ENABLE_UNITYEVENTS;ENABLE_WEBCAM;ENABLE_WWW;ENABLE_AUDIOMIXER_SUSPEND;ENABLE_NONPRO;INCLUDE_DYNAMIC_GI;INCLUDE_GI;INCLUDE_IL2CPP;PLATFORM_SUPPORTS_MONO;RENDER_SOFTWARE_CURSOR;UNITY_STANDALONE_WIN;UNITY_STANDALONE;ENABLE_SUBSTANCE;ENABLE_TEXTUREID_MAP;ENABLE_RUNTIME_GI;ENABLE_MOVIES;ENABLE_NETWORK;ENABLE_MONO;DEVELOPMENT_BUILD;ENABLE_PROFILER;UNITY_EDITOR;UNITY_EDITOR_64;UNITY_EDITOR_WIN;CROSS_PLATFORM_INPUT</DefineConstants>
 	<ErrorReport>prompt</ErrorReport>
 	<WarningLevel>4</WarningLevel>
 	<NoWarn>0169</NoWarn>
@@ -64,10 +64,15 @@
      <Compile Include="Assets\Scripts\Events\IEventCaller.cs" />
      <Compile Include="Assets\Scripts\Events\IEventReceiver.cs" />
      <Compile Include="Assets\Scripts\Events\OutterEventType.cs" />
+     <Compile Include="Assets\Scripts\Game\BasicUnit.cs" />
      <Compile Include="Assets\Scripts\Game\Game.cs" />
      <Compile Include="Assets\Scripts\Game\GameCache.cs" />
+     <Compile Include="Assets\Scripts\Game\GameCamera.cs" />
      <Compile Include="Assets\Scripts\Game\GameLoader.cs" />
      <Compile Include="Assets\Scripts\Game\PlayerIndex.cs" />
+     <Compile Include="Assets\Scripts\Game\Prefab.cs" />
+     <Compile Include="Assets\Scripts\Game\PrefabDatabase.cs" />
+     <Compile Include="Assets\Scripts\Game\PrefabID.cs" />
      <Compile Include="Assets\Scripts\Networking\AccountDetails.cs" />
      <Compile Include="Assets\Scripts\Networking\AuthenticationServer.cs" />
      <Compile Include="Assets\Scripts\Networking\Authenticator.cs" />
@@ -78,6 +83,7 @@
      <Compile Include="Assets\Scripts\Networking\InvalidPacketException.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkChat.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkEvent.cs" />
+     <Compile Include="Assets\Scripts\Networking\NetworkID.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkManager.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkRPC.cs" />
      <Compile Include="Assets\Scripts\Networking\NetworkServer.cs" />
@@ -96,7 +102,10 @@
      <Compile Include="Assets\Scripts\Tester.cs" />
      <Compile Include="Assets\Scripts\UI\IChatInterceptor.cs" />
      <Compile Include="Assets\Scripts\UI\UIAbilityTooltip.cs" />
+     <Compile Include="Assets\Scripts\UI\UIBar.cs" />
      <Compile Include="Assets\Scripts\UI\UIBase.cs" />
+     <Compile Include="Assets\Scripts\UI\UIBuff.cs" />
+     <Compile Include="Assets\Scripts\UI\UIBuffbar.cs" />
      <Compile Include="Assets\Scripts\UI\UICanvasEx.cs" />
      <Compile Include="Assets\Scripts\UI\UIChatbox.cs" />
      <Compile Include="Assets\Scripts\UI\UICreateGameWindow.cs" />
@@ -111,6 +120,7 @@
      <Compile Include="Assets\Scripts\UI\UIMenuSystem.cs" />
      <Compile Include="Assets\Scripts\UI\UIPlayerPanel.cs" />
      <Compile Include="Assets\Scripts\UI\UIScrollArea.cs" />
+     <Compile Include="Assets\Scripts\UI\UITooltip.cs" />
      <Compile Include="Assets\Scripts\UI\UIUtils.cs" />
      <Compile Include="Assets\Scripts\UI\UIWindow.cs" />
      <Compile Include="Assets\Scripts\Utilities\CommandProcessor.cs" />
@@ -129,12 +139,47 @@
      <Compile Include="Assets\Scripts\Utilities\UID.cs" />
      <Compile Include="Assets\Scripts\Utilities\UniqueNumberGenerator.cs" />
      <Compile Include="Assets\Scripts\Utilities\Utilities.cs" />
+     <None Include="Assets\ProCore\Prototype\About\changelog.txt" />
+     <None Include="Assets\ProCore\Prototype\Shader\DiffuseVertexColor.shader" />
+     <None Include="Assets\ProCore\Shared\About\README.txt" />
+     <None Include="Assets\ProCore\Prototype\Shader\DiffuseVertexColorTransparency.shader" />
+     <None Include="Assets\ProCore\Prototype\Shader\pb_FaceHighlight.shader" />
+     <None Include="Assets\ProCore\Prototype\Shader\UnlitSolidColor.shader" />
+     <None Include="Assets\Standard Assets\Environment\Water\Water4\Shaders\FXWater4Simple.shader" />
+     <None Include="Assets\ProCore\Prototype\Shader\DiffuseTextureBlend.shader" />
+     <None Include="Assets\ProCore\Prototype\Shader\pb_UnlitVertexColor.shader" />
+     <None Include="Assets\Standard Assets\Environment\Water (Basic)\Shaders\FXWaterBasic.shader" />
+     <None Include="Assets\Standard Assets\CrossPlatformInput\CrossPlatformInputGuidelines.txt" />
+     <None Include="Assets\ProCore\Prototype\About\pc_AboutEntry_ProBuilder.txt" />
+     <None Include="Assets\Standard Assets\Environment\Water\Water\Shaders\FXWaterPro.shader" />
+     <None Include="Assets\ProCore\Prototype\Shader\pb_VertexShader.shader" />
+     <None Include="Assets\ProCore\_README_PROTOTYPE.txt" />
+     <None Include="Assets\ProCore\Prototype\Shader\DiffuseVertexColorEmission.shader" />
+     <None Include="Assets\Standard Assets\Environment\Water\Water4\Shaders\WaterInclude.cginc" />
+     <None Include="Assets\Standard Assets\Environment\Water\Water4\Shaders\FXWater4Advanced.shader" />
+     <None Include="Assets\ProCore\Prototype\About\Credits.txt" />
  <Reference Include="UnityEngine.UI">
  <HintPath>C:/Program Files/Unity_5/Editor/Data/UnityExtensions/Unity/GUISystem/UnityEngine.UI.dll</HintPath>
+ </Reference>
+ <Reference Include="ProBuilderCore-Unity5">
+ <HintPath>C:/Users/Development/Desktop/Fast_Repo/Village Defense/Village-Defense/Village Defense Project/Assets/ProCore/Prototype/Classes/ProBuilderCore-Unity5.dll</HintPath>
+ </Reference>
+ <Reference Include="ProBuilderMeshOps-Unity5">
+ <HintPath>C:/Users/Development/Desktop/Fast_Repo/Village Defense/Village-Defense/Village Defense Project/Assets/ProCore/Prototype/Classes/ProBuilderMeshOps-Unity5.dll</HintPath>
+ </Reference>
+ <Reference Include="ProCore">
+ <HintPath>C:/Users/Development/Desktop/Fast_Repo/Village Defense/Village-Defense/Village Defense Project/Assets/ProCore/Shared/Code/ProCore.dll</HintPath>
+ </Reference>
+ <Reference Include="pb_Profiler">
+ <HintPath>C:/Users/Development/Desktop/Fast_Repo/Village Defense/Village-Defense/Village Defense Project/Assets/ProCore/Shared/pb_Profiler/pb_Profiler.dll</HintPath>
  </Reference>
  <Reference Include="UnityEditor.iOS.Extensions.Xcode">
  <HintPath>C:/Program Files/Unity_5/Editor/Data/PlaybackEngines/iossupport/UnityEditor.iOS.Extensions.Xcode.dll</HintPath>
  </Reference>
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="Assembly-CSharp-firstpass-vs.csproj">
+      <Project>{638C94C0-80E4-B320-B611-C15D0FDD194A}</Project>      <Name>Assembly-CSharp-firstpass-vs</Name>    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

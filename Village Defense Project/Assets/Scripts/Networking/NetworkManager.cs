@@ -193,6 +193,14 @@ namespace Gem
 
             private List<NetworkChat> m_Chats = new List<NetworkChat>();
 
+            private Dictionary<Guid, NetworkID> m_GameObjects = new Dictionary<Guid, NetworkID>();
+            [DebugLabel]
+            [SerializeField]
+            private List<NetworkID> Debug_GAMEOBJECTS = new List<NetworkID>();
+
+            //A list of objects pending to be added to m_GameObjects
+            private List<NetworkView> m_PendingGameObjects = new List<NetworkView>();
+
             #region EVENTS
 
             private event NetworkEventCallback m_OnPlayerConnected;
@@ -200,6 +208,8 @@ namespace Gem
             private event NetworkEventCallback m_OnRefreshConnections;
             private event NetworkEventCallback m_OnPlayerKicked;
             private event NetworkEventCallback m_OnWasKicked;
+            private event NetworkEventCallback m_OnObjectCreated;
+            private event NetworkEventCallback m_OnObjectDestroyed;
             #endregion
 
 
@@ -1318,6 +1328,11 @@ namespace Gem
 
             }
 
+            private void OnNetworkInstantiate(NetworkMessageInfo aInfo)
+            {
+                m_PendingGameObjects.Add(aInfo.networkView);
+            }
+
             private IEnumerator<YieldInstruction> KickPlayer(NetworkPlayer aPlayer)
             {
                 yield return new WaitForEndOfFrame();
@@ -1832,6 +1847,12 @@ namespace Gem
                     case NetworkEvent.OnWasKicked:
                         instance.m_OnWasKicked += aCallback;
                         break;
+                    case NetworkEvent.OnObjectCreated:
+                        instance.m_OnObjectCreated += aCallback;
+                        break;
+                    case NetworkEvent.OnObjectDestroyed:
+                        instance.m_OnObjectDestroyed += aCallback;
+                        break;
                 }
             }
             public static void UnregisterNetworkCallback(NetworkEvent aEvent, NetworkEventCallback aCallback)
@@ -1863,6 +1884,12 @@ namespace Gem
                         break;
                     case NetworkEvent.OnWasKicked:
                         instance.m_OnWasKicked -= aCallback;
+                        break;
+                    case NetworkEvent.OnObjectCreated:
+                        instance.m_OnObjectCreated -= aCallback;
+                        break;
+                    case NetworkEvent.OnObjectDestroyed:
+                        instance.m_OnObjectDestroyed -= aCallback;
                         break;
                 }
             }
@@ -1951,6 +1978,431 @@ namespace Gem
 
             #endregion
 
+            #region OBJECT FUNCTIONS
+
+            /// <summary>
+            /// Creates an object over the network. Returns the ID of the object created. 
+            /// </summary>
+            /// <param name="aPrefabID">The ID of the prefab to create.</param>
+            /// <returns>Returns a unique ID of the object. Use this to find the reference to the object.</returns>
+            public static Guid CreateObject(PrefabID aPrefabID)
+            {
+                return CreateObject(aPrefabID, Vector3.zero, Quaternion.identity, GetCurrentUser());
+            }
+
+            /// <summary>
+            /// Creates an object over the network. Returns the ID of the object created. 
+            /// </summary>
+            /// <param name="aPrefabID">The ID of the prefab to create.</param>
+            /// <param name="aPosition">The position of the object to be created.</param>
+            /// <param name="aRotation">The rotation of the object to be created.</param>
+            /// <returns>Returns a unique ID of the object. Use this to find the reference to the object.</returns>
+            public static Guid CreateObject(PrefabID aPrefabID, Vector3 aPosition, Quaternion aRotation)
+            {
+                return CreateObject(aPrefabID, aPosition, aRotation, GetCurrentUser());
+            }
+
+            /// <summary>
+            /// Creates an object over the network. Returns the ID of the object created. 
+            /// </summary>
+            /// <param name="aPrefabID">The ID of the prefab to create.</param>
+            /// <param name="aOwner">The owner of the object.</param>
+            /// <returns>Returns a unique ID of the object. Use this to find the reference to the object.</returns>
+            public static Guid CreateObject(PrefabID aPrefabID, NetworkUser aOwner)
+            {
+                return CreateObject(aPrefabID, Vector3.zero, Quaternion.identity, aOwner);
+            }
+
+            /// <summary>
+            /// Creates an object over the network. Returns the ID of the object created. 
+            /// </summary>
+            /// <param name="aPrefabID">The ID of the prefab to create.</param>
+            /// <param name="aPosition">The position of the object to be created.</param>
+            /// <param name="aRotation">The rotation of the object to be created.</param>
+            /// <param name="aOwner">The owner of the object.</param>
+            /// <returns>Returns a unique ID of the object. Use this to find the reference to the object.</returns>
+            public static Guid CreateObject(PrefabID aPrefabID, Vector3 aPosition, Quaternion aRotation, NetworkUser aOwner)
+            {
+                if (aPrefabID == PrefabID.None)
+                {
+                    DebugUtils.LogError("Cannot create objects with invalid IDs");
+                    return Guid.Empty;
+                }
+
+                Guid guid = Guid.NewGuid();
+
+                if (Network.isClient)
+                {
+                    //Send message
+                    Packet packet = PacketFactory.CreateObjectCreatePacket(guid, aPrefabID, aPosition, aRotation, GetCurrentUser());
+                    if (packet != null)
+                    {
+                        Send(NetworkRPC.MANAGER_ON_CREATE_OBJECT, RPCMode.Server, packet.bytes);
+                    }
+                }
+                else if (Network.isServer)
+                {
+                    CreateObject(guid, aPrefabID,aPosition, aRotation, GetCurrentUser());
+                }
+
+                return guid;
+            }
+
+            /// <summary>
+            /// Destroys an object on the network.
+            /// </summary>
+            /// <param name="aNetworkID">The ID component to destroy over the network.</param>
+            public static void DestroyObject(NetworkID aNetworkID)
+            {
+                if (instance == null)
+                {
+                    return;
+                }
+                if (aNetworkID == null)
+                {
+                    DebugUtils.ArgumentNull("aNetworkID");
+                    return;
+                }
+
+
+
+                if (Network.isClient)
+                {
+                    //Send
+                    Packet packet = PacketFactory.CreateObjectDestroyPacket(aNetworkID.guid, GetCurrentUser());
+                    if (packet != null)
+                    {
+                        Send(NetworkRPC.MANAGER_ON_DESTROY_OBJECT, RPCMode.Server, packet.bytes);
+                    }
+                }
+                else
+                {
+                    DestroyObject(aNetworkID.guid, GetCurrentUser());
+                }
+            }
+
+            /// <summary>
+            /// Finds a object with the guid ID.
+            /// </summary>
+            /// <param name="aGuid">The unique ID of the object to search for.</param>
+            /// <returns>Returns an object found or null if it doesn't exist.</returns>
+            public static NetworkID GetObject(string aGuid)
+            {
+                return GetObject(new Guid(aGuid));
+            }
+
+            /// <summary>
+            /// Finds a object with the guid ID.
+            /// </summary>
+            /// <param name="aGuid">The unique ID of the object to search for.</param>
+            /// <returns>Returns an object found or null if it doesn't exist.</returns>
+            public static NetworkID GetObject(byte[] aGuid)
+            {
+                return GetObject(new Guid(aGuid));
+            }
+
+            /// <summary>
+            /// Finds a object with the guid ID.
+            /// </summary>
+            /// <param name="aGuid">The unique ID of the object to search for.</param>
+            /// <returns>Returns an object found or null if it doesn't exist.</returns>
+            public static NetworkID GetObject(Guid aGuid)
+            {
+                if (instance == null)
+                {
+                    return null;
+                }
+
+                KeyValuePair<Guid, NetworkID> pair = instance.m_GameObjects.FirstOrDefault<KeyValuePair<Guid, NetworkID>>(Element => Element.Key == aGuid);
+                return pair.Value;
+            }
+
+            #region HIDDEN METHODS DO NOT CALL
+
+            /// <summary>
+            /// Creates an object over the network. Returns the ID of the object created. 
+            /// </summary>
+            /// <param name="aGuid">The ID of the object created.</param>
+            /// <param name="aPrefabID">The ID of the prefab to create.</param>
+            /// <param name="aPosition">The position of the object to be created.</param>
+            /// <param name="aRotation">The rotation of the object to be created.</param>
+            /// <param name="aUser">The owner of the object.</param>
+            /// <returns>Returns a unique ID of the object. Use this to find the reference to the object.</returns>
+            private static void CreateObject(Guid aGuid, PrefabID aPrefabID, Vector3 aPosition, Quaternion aRotation, NetworkUser aUser)
+            {
+                if(!Network.isServer)
+                {
+                    DebugUtils.LogError("Only the server can create objects on the network");
+                    return;
+                }
+                
+                GameObject prefab = PrefabDatabase.GetPrefab(aPrefabID);
+
+                if(prefab == null)
+                {
+                    DebugUtils.LogError(aPrefabID + " has not been registered in the database");
+                    return;
+                }
+
+                GameObject gameobject = Network.Instantiate(prefab, aPosition, aRotation, 0) as GameObject;
+                NetworkID networkID = gameobject.GetComponent<NetworkID>();
+                //This should never happen.
+                if(networkID == null)
+                {
+                    DebugUtils.LogError("Spawned a prefab without a network ID");
+                    instance.DestroyInvalidObject(gameobject);
+                    return;
+                }
+                networkID.AssignID(aGuid, aUser);
+            }
+
+            /// <summary>
+            /// Gets called on the server to destroy an object.
+            /// The object must be registered in order to be destroyed.
+            /// </summary>
+            /// <param name="aGuid">The ID ofthe object registered in the server.</param>
+            /// <param name="aSender">The sender of the destroy invokation.</param>
+            private static void DestroyObject(Guid aGuid, NetworkUser aSender)
+            {
+                NetworkID networkObject = GetObject(aGuid);
+                if(networkObject != null)
+                {
+                    Packet packet = PacketFactory.CreateObjectDestroyPacket(aGuid, aSender);
+                    if(packet != null)
+                    {
+                        Send(NetworkRPC.MANAGER_ON_OBJECT_DESTROYED, RPCMode.OthersBuffered, packet.bytes);
+                    }
+
+                    if (instance.m_OnObjectDestroyed != null)
+                    {
+                        instance.m_OnObjectDestroyed.Invoke(
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_DESTROYED_OBJECT, networkObject),
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_SENDER, aSender));
+                    }
+
+                    Network.RemoveRPCs(networkObject.view.viewID);
+                    Destroy(networkObject.gameObject);
+                    
+                }
+            }
+
+            /// <summary>
+            /// Gets called by NetworkID's to register themselves.
+            /// </summary>
+            /// <param name="aNetworkID">The ID to register with the network.</param>
+            public static void RegisterNetworkID(NetworkID aNetworkID)
+            {
+                if(instance == null)
+                {
+                    return;
+                }
+                if(aNetworkID == null)
+                {
+                    DebugUtils.ArgumentNull("aNetworkID");
+                    return;
+                }
+
+                if(aNetworkID.guid != Guid.Empty)
+                {
+                    DebugUtils.LogError("NetworkID already exists");
+                    return;
+                }
+
+                if (!instance.m_GameObjects.ContainsKey(aNetworkID.guid))
+                {
+                    //Add to gameobjects
+                    instance.m_GameObjects.Add(aNetworkID.guid, aNetworkID);
+                    instance.Debug_GAMEOBJECTS.Add(aNetworkID);
+
+                    if(instance.m_OnObjectCreated != null)
+                    {
+                        instance.m_OnObjectCreated.Invoke(
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_CREATED_OBJECT, aNetworkID));
+                    }
+                }
+                else
+                {
+                    DebugUtils.LogError("NetworkID already registered");
+                }
+
+                
+            }
+
+            /// <summary>
+            /// Gets called by NetworkID's to unregister themselves.
+            /// </summary>
+            /// <param name="aNetworkID">The ID to register with the network.</param>
+            public static void UnregisterNetworkID(NetworkID aNetworkID)
+            {
+                if(instance == null)
+                {
+                    return;
+                }
+                if(aNetworkID.guid == Guid.Empty)
+                {
+                    DebugUtils.LogError("NetworkID was never assigned");
+                    return;
+                }
+
+                bool success = instance.m_GameObjects.Remove(aNetworkID.guid);
+                bool success2 = instance.Debug_GAMEOBJECTS.Remove(aNetworkID);
+
+                if(success == false)
+                {
+                    DebugUtils.LogError("An object with the key " + aNetworkID.guid.ToString() + " was never registered.");
+                }
+                if(success2 == false)
+                {
+                    DebugUtils.LogError("An object is unregistering but was never registered");
+                }
+
+            }
+
+            /// <summary>
+            /// Call this to destroy invalid game objects only.
+            /// (Objects with no NetworkID)
+            /// </summary>
+            /// <param name="aGameObject"></param>
+            private void DestroyInvalidObject(GameObject aGameObject)
+            {
+                if(aGameObject == null)
+                {
+                    DebugUtils.ArgumentNull("aGameObject");
+                    return;
+                }
+                NetworkView networkView = aGameObject.GetComponent<NetworkView>();
+                if (networkView != null)
+                {
+                    if(Network.isServer)
+                    {
+                        OnReportInvalidObject(networkView.viewID);
+                    }
+                    else
+                    {
+                        Send(NetworkRPC.MANAGER_ON_REPORT_INVALID_OBJECT, RPCMode.Server, networkView.viewID);
+                    }
+                }
+                else
+                {
+                    DebugUtils.LogError("DestroyInvalidObject: Missing NetworkView");
+                }
+            }
+            [RPC]
+            private void OnReportInvalidObject(NetworkViewID aViewID)
+            {
+                if(!Network.isServer)
+                {
+                    ClientRPCError("OnReportInvalidObject", NetworkRPC.MANAGER_ON_REPORT_INVALID_OBJECT);
+                    return;
+                }
+
+                Send(NetworkRPC.MANAGER_ON_DESTROY_INVALID_OBJECT, RPCMode.OthersBuffered, aViewID);
+                OnDestroyInvalidObject(aViewID);
+            }
+            [RPC]
+            private void OnDestroyInvalidObject(NetworkViewID aViewID)
+            {
+                if(Network.isClient)
+                {
+                    NetworkView invalidObject = m_PendingGameObjects.FirstOrDefault<NetworkView>(Element => Element.viewID == aViewID);
+                    if(invalidObject != null)
+                    {
+                        Network.RemoveRPCs(aViewID);
+                        Destroy(invalidObject.gameObject);
+                    }
+                    else
+                    {
+                        DebugUtils.LogError("An object with the viewID " + aViewID + " does not exist");
+                    }
+                }
+                else if(Network.isServer)
+                {
+                    NetworkView invalidObject = m_PendingGameObjects.FirstOrDefault<NetworkView>(Element => Element.viewID == aViewID);
+                    if(invalidObject != null)
+                    {
+                        Network.RemoveRPCs(aViewID);
+                        Destroy(invalidObject.gameObject);
+                    }
+                }
+            }
+            [RPC]
+            private void OnCreateObject(byte[] aBytes)
+            {
+                if (!Network.isServer)
+                {
+                    ClientRPCError("OnCreateObject", NetworkRPC.MANAGER_ON_CREATE_OBJECT);
+                    return;
+                }
+
+                Guid guid = Guid.Empty;
+                PrefabID prefabID = PrefabID.None;
+                Vector3 position = Vector3.zero;
+                Quaternion rotation = Quaternion.identity;
+                NetworkUser user = NetworkUser.BAD_USER;
+
+                if (PacketFactory.GetObjectCreatePacketData(new Packet(aBytes), out guid, out prefabID, out position, out rotation, out user))
+                {
+                    CreateObject(guid,prefabID,position,rotation,user);
+                }
+            }
+            /// <summary>
+            /// Gets called on the server to destroy an object.
+            /// </summary>
+            /// <param name="aBytes">A ObjectDestroy packet.</param>
+            [RPC]
+            private void OnDestroyObject(byte[] aBytes)
+            {
+                if (!Network.isServer)
+                {
+                    ClientRPCError("OnDestroyObject", NetworkRPC.MANAGER_ON_DESTROY_OBJECT);
+                }
+
+                Guid guid = Guid.Empty;
+                NetworkUser sender = NetworkUser.BAD_USER;
+
+                if (PacketFactory.GetObjectDestroyPacketData(new Packet(aBytes), out guid, out sender))
+                {
+                    DestroyObject(guid, sender);
+                }
+            }
+            /// <summary>
+            /// Gets called on clients to notify of an object being destroyed.
+            /// </summary>
+            /// <param name="aBytes"></param>
+            [RPC]
+            private void OnObjectDestroyed(byte[] aBytes)
+            {
+                if (!Network.isClient)
+                {
+                    ServerRPCError("OnObjectDestroyed", NetworkRPC.MANAGER_ON_OBJECT_DESTROYED);
+                    return;
+                }
+
+                Guid guid = Guid.Empty;
+                NetworkUser sender = NetworkUser.BAD_USER;
+
+                if (PacketFactory.GetObjectDestroyPacketData(new Packet(aBytes), out guid, out sender))
+                {
+                    NetworkID networkObject = GetObject(guid);
+                    if (networkObject != null)
+                    {
+                        m_OnObjectDestroyed.Invoke(
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_DESTROYED_OBJECT, networkObject),
+                            new EventProperty(Constants.NETWORK_EVENT_PROPERTY_SENDER, sender));
+                        Network.RemoveRPCs(networkObject.view.viewID);
+                        Destroy(networkObject);
+                    }
+                    else
+                    {
+                        DebugUtils.LogError("Attempting to destroy object with ID" + guid + " but object does not exist");
+                    }
+                }
+
+            }
+
+            #endregion
+
+            #endregion
 
         }
     }

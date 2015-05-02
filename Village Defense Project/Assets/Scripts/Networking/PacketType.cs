@@ -18,6 +18,10 @@ namespace Gem
             ConnectionStatus,
             ConnectionList,
             ConnectionKicked,
+
+            //Object
+            ObjectCreate,
+            ObjectDestroy,
         }
     }
 }

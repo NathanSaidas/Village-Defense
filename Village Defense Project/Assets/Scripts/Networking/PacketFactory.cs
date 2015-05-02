@@ -4,6 +4,8 @@ using System.Runtime.Serialization.Formatters.Binary;
 
 using System.Runtime.Serialization;
 
+using UnityEngine;
+
 #region CHANGE LOG
 // -- April     28, 2015 - Nathan Hanlan - Added the packet factory classs.
 #endregion
@@ -73,6 +75,90 @@ namespace Gem
                     
                 
             }
+
+            public static void SerializeVector3(Vector3 aVector, BinaryFormatter aFormatter, MemoryStream aStream)
+            {
+                if(aFormatter != null && aStream != null)
+                {
+                    aFormatter.Serialize(aStream, typeof(Vector3).Name);
+                    aFormatter.Serialize(aStream, aVector.x);
+                    aFormatter.Serialize(aStream, aVector.y);
+                    aFormatter.Serialize(aStream, aVector.z);
+                }
+            }
+
+            public static void SerializeQuaternion(Quaternion aQuaternion, BinaryFormatter aFormatter, MemoryStream aStream)
+            {
+                if (aFormatter != null && aStream != null)
+                {
+                    aFormatter.Serialize(aStream, typeof(Quaternion).Name);
+                    aFormatter.Serialize(aStream, aQuaternion.x);
+                    aFormatter.Serialize(aStream, aQuaternion.y);
+                    aFormatter.Serialize(aStream, aQuaternion.z);
+                    aFormatter.Serialize(aStream, aQuaternion.w);
+                }
+            }
+
+            public static bool DeserializeVector3(out Vector3 aVector, BinaryFormatter aFormatter, MemoryStream aStream)
+            {
+                
+
+                aVector = Vector3.zero;
+                if (aFormatter == null || aStream == null)
+                {
+                    return false;
+                }
+                string typename = string.Empty;
+                try
+                {
+                    typename = (string)aFormatter.Deserialize(aStream);
+                    aVector.x = (float)aFormatter.Deserialize(aStream);
+                    aVector.y = (float)aFormatter.Deserialize(aStream);
+                    aVector.z = (float)aFormatter.Deserialize(aStream);
+                    return true;
+                }
+                catch (Exception aException)
+                {
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        DebugUtils.LogError("Error deserializing type, " + typename);
+                    }
+                    DebugUtils.LogException(aException);
+                    return false;
+                }
+
+                
+            }
+
+            public static bool DeserializeQuaternion(out Quaternion aQuaternion, BinaryFormatter aFormatter, MemoryStream aStream)
+            {
+                aQuaternion = Quaternion.identity;
+                if(aFormatter == null || aStream == null)
+                {
+                    return false;
+                }
+
+                string typename = string.Empty;
+                try
+                {
+                    typename = (string)aFormatter.Deserialize(aStream);
+                    aQuaternion.x = (float)aFormatter.Deserialize(aStream);
+                    aQuaternion.y = (float)aFormatter.Deserialize(aStream);
+                    aQuaternion.z = (float)aFormatter.Deserialize(aStream);
+                    aQuaternion.w = (float)aFormatter.Deserialize(aStream);
+                    return true;
+                }
+                catch (Exception aException)
+                {
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        DebugUtils.LogError("Error deserializing type, " + typename);
+                    }
+                    DebugUtils.LogException(aException);
+                    return false;
+                }
+            }
+            
 
             //Authentication
             
@@ -517,6 +603,175 @@ namespace Gem
                     return false;
                 }
 
+            }
+
+            //Object Create
+
+            public static Packet CreateObjectCreatePacket(Guid aGuid, PrefabID aPrefabID, Vector3 aPosition, Quaternion aRotation,  NetworkUser aUser)
+            {
+                if(aGuid == Guid.Empty)
+                {
+                    DebugUtils.InvalidArgument("aGuid");
+                    return null;
+                }
+                if(aPrefabID == PrefabID.None)
+                {
+                    DebugUtils.InvalidArgument("aPrefabID");
+                    return null;
+                }
+                if (aUser == NetworkUser.BAD_USER)
+                {
+                    DebugUtils.InvalidArgument("aUser");
+                    return null;
+                }
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream();
+
+                CreateHeader(PacketType.ObjectCreate, formatter, stream);
+
+                formatter.Serialize(stream, typeof(Guid).Name);
+                formatter.Serialize(stream, aGuid.ToByteArray());
+
+                formatter.Serialize(stream, typeof(PrefabID).Name);
+                formatter.Serialize(stream, aPrefabID);
+
+                SerializeVector3(aPosition, formatter, stream);
+                SerializeQuaternion(aRotation, formatter, stream);
+
+                formatter.Serialize(stream, typeof(NetworkUser).Name);
+                aUser.Serialize(stream, formatter);
+
+                return new Packet(stream.ToArray());
+            }
+
+            public static bool GetObjectCreatePacketData(Packet aPacket, out Guid aGuid, out PrefabID aPrefabID, out Vector3 aPosition, out Quaternion aRotation, out NetworkUser aUser)
+            {
+                aGuid = Guid.Empty;
+                aPrefabID = PrefabID.None;
+                aPosition = Vector3.zero;
+                aRotation = Quaternion.identity;
+                aUser = NetworkUser.BAD_USER;
+
+                if(aPacket == null || aPacket.bytes == null || aPacket.bytes.Length == 0)
+                {
+                    DebugUtils.LogError(ErrorCode.BAD_PACKET);
+                    return false;
+                }
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream(aPacket.bytes);
+                string typename = string.Empty;
+
+                try
+                {
+                    if (!CheckHeader(PacketType.ObjectCreate, formatter, stream))
+                    {
+                        return false;
+                    }
+
+                    typename = (string)formatter.Deserialize(stream);
+                    byte[] bytes = (byte[])formatter.Deserialize(stream);
+                    aGuid = new Guid(bytes);
+
+                    typename = (string)formatter.Deserialize(stream);
+                    aPrefabID = (PrefabID)formatter.Deserialize(stream);
+
+                    if(!DeserializeVector3(out aPosition, formatter,stream))
+                    {
+                        return false;
+                    }
+                    if(!DeserializeQuaternion(out aRotation, formatter, stream))
+                    {
+                        return false;
+                    }
+
+                    typename = (string)formatter.Deserialize(stream);
+                    aUser.Deserialize(stream, formatter);
+
+                    return true;
+                }
+                catch (Exception aException)
+                {
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        DebugUtils.LogError("Error deserializing packet type, " + typename);
+                    }
+                    DebugUtils.LogException(aException);
+                    return false;
+                }
+            }
+
+            //Object Destroy
+            
+            public static Packet CreateObjectDestroyPacket(Guid aGuid, NetworkUser aUser)
+            {
+                if(aGuid == Guid.Empty)
+                {
+                    DebugUtils.InvalidArgument("aGuid");
+                    return null;
+                }
+                if(aUser == NetworkUser.BAD_USER)
+                {
+                    DebugUtils.InvalidArgument("aUser");
+                    return null;
+                }
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream();
+
+                CreateHeader(PacketType.ObjectDestroy, formatter, stream);
+
+                formatter.Serialize(stream, typeof(Guid).Name);
+                formatter.Serialize(stream, aGuid.ToByteArray());
+
+                formatter.Serialize(stream, typeof(NetworkUser).Name);
+                aUser.Serialize(stream, formatter);
+
+                return new Packet(stream.ToArray());
+            }
+
+            public static bool GetObjectDestroyPacketData(Packet aPacket, out Guid aGuid, out NetworkUser aUser)
+            {
+                aGuid = Guid.Empty;
+                aUser = NetworkUser.BAD_USER;
+
+                if(aPacket == null || aPacket.bytes == null || aPacket.bytes.Length == 0)
+                {
+                    DebugUtils.LogError(ErrorCode.BAD_PACKET);
+                    return false;
+                }
+
+
+                BinaryFormatter formatter = new BinaryFormatter();
+                MemoryStream stream = new MemoryStream(aPacket.bytes);
+                string typename = string.Empty;
+
+                try
+                {
+                    if (!CheckHeader(PacketType.ObjectDestroy, formatter, stream))
+                    {
+                        return false;
+                    }
+
+                    typename = (string)formatter.Deserialize(stream);
+                    byte[] bytes = (byte[])formatter.Deserialize(stream);
+                    aGuid = new Guid(bytes);
+
+                    typename = (string)formatter.Deserialize(stream);
+                    aUser.Deserialize(stream, formatter);
+
+                    return true;
+                }
+                catch (Exception aException)
+                {
+                    if (!string.IsNullOrEmpty(typename))
+                    {
+                        DebugUtils.LogError("Error deserializing packet type, " + typename);
+                    }
+                    DebugUtils.LogException(aException);
+                    return false;
+                }
             }
         }
 
